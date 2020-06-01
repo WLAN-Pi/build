@@ -62,7 +62,6 @@ InstallProfiler() {
 	rm -rf profiler2
 
 	install -o root -g root -m 644 /tmp/overlay/lib/systemd/system/profiler.service /lib/systemd/system
-	systemctl enable profiler
 }
 
 SetupCockpit() {

@@ -5,6 +5,3 @@ After=multi-user.target
 [Service]
 Type=idle
 ExecStart=/usr/local/bin/profiler
-
-[Install]
-WantedBy=multi-user.target
