@@ -1,0 +1,12 @@
+#!/bin/bash
+enable_root=1
+
+if [ -n "$2" ]; then
+	enable_root=$2
+fi
+
+if [ "$enable_root" == "1" ] || [ "$enable_root" == "yes" ] || [ "$enable_root" == "y" ] || [ "$enable_root" == "true" ]; then
+	sed -i 's,^\(root:.*\)/usr/sbin/nologin$,\1/bin/bash,g' /etc/passwd
+else
+	sed -i 's,^\(root:.*\)/bin/bash$,\1/usr/sbin/nologin,g' /etc/passwd
+fi

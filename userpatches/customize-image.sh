@@ -30,25 +30,30 @@ Main() {
 	InstallSpeedTest
 	InstallProfiler
 	SetupCockpit
+	SetupOtherServices
 
 } # Main
 
 # This sets up all external debian repos so we can call "apt update" only once here
 SetupExternalRepos() {
 	###### speedtest ######
-	export INSTALL_KEY=379CE192D401AB61
+	#export INSTALL_KEY=379CE192D401AB61
 	# Debian versions supported: jessie, stretch, buster
-	export DEB_DISTRO=$(lsb_release -sc)
-	sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys $INSTALL_KEY
-	echo "deb https://ookla.bintray.com/debian ${DEB_DISTRO} main" | sudo tee /etc/apt/sources.list.d/speedtest.list
+	#export DEB_DISTRO=$(lsb_release -sc)
+	#sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys $INSTALL_KEY
+	#echo "deb https://ookla.bintray.com/debian ${DEB_DISTRO} main" | sudo tee /etc/apt/sources.list.d/speedtest.list
 	###### speedtest ######
 
-	apt update
+	#apt update
+	echo No external repo currently used
 }
 
 InstallSpeedTest() {
 	# Repo was included on SetupExternalRepos
-	apt -y --allow-unauthenticated install speedtest
+	#apt -y --allow-unauthenticated install speedtest
+
+	# Install unofficial speedtest-cli from pip
+	python3 -m pip install speedtest-cli
 }
 
 InstallProfiler() {
@@ -67,16 +72,6 @@ InstallProfiler() {
 SetupCockpit() {
 	# Enable service
 	systemctl enable cockpit.socket
-
-	# Open firewall port
-	is_service_known=$(firewall-offline-cmd --get-service | grep cockpit)
-	if [ -n "$is_service_known" ]; then
-		echo Cockpit is known by firewalld, add service
-		firewall-offline-cmd --add-service=cockpit
-	else
-		echo Cockpit is not known by firewalld, add port
-		firewall-offline-cmd --add-port=9090/tcp
-	fi
 }
 
 SetDefaultShell() {
@@ -126,8 +121,12 @@ SetupRootUser() {
 
 	# Set root password
 	echo "root:Wlanpi!" | chpasswd
+
+	# Copy script to enable/disable root on demand to facilitate developement
+	install -o root -g root -m 744 /tmp/overlay/usr/bin/enableroot /usr/bin
+
 	# Disable root login
-	sed -i 's#\(root:.*\)/bin/bash#\1/sbin/nologin#g' /etc/passwd
+	enableroot 0
 }
 
 AddUserWLANPi() {
@@ -135,6 +134,9 @@ AddUserWLANPi() {
 	useradd -m wlanpi
 	echo wlanpi:wlanpi | chpasswd
 	usermod -aG sudo wlanpi
+
+	# Include system binaries in wlanpi's PATH - avoid using sudo
+	echo 'export PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"' >> /home/wlanpi/.profile
 }
 
 InstallWLANPiApps() {
@@ -144,6 +146,11 @@ InstallWLANPiApps() {
 		echo Install $app
 		/usr/local/sbin/pkg_admin -i $app
 	done
+}
+
+SetupOtherServices() {
+	##### iperf3 service #####
+	install -o root -g root -m 644 /tmp/overlay/lib/systemd/system/iperf3.service /lib/systemd/system
 }
 
 SetupOtherConfigFiles() {
@@ -159,6 +166,11 @@ SetupOtherConfigFiles() {
 
 	# Add our custom sudoers file
 	install -o root -g root -m 440 /tmp/overlay/etc/sudoers.d/wlanpidump /etc/sudoers.d
+
+	# Copy ufw rules
+	install -o root -g root -m 640 /tmp/overlay/etc/ufw/user.rules /etc/ufw
+
+	sed -i '/start)/a ufw enable' /usr/lib/armbian/armbian-firstrun
 }
 
 InstallMongoDB() {
