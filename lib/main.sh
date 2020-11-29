@@ -514,7 +514,11 @@ $([[ -n $COMPRESS_OUTPUTIMAGE ]] && echo "COMPRESS_OUTPUTIMAGE=${COMPRESS_OUTPUT
 } # end of do_default()
 
 if [[ -z $1 ]]; then
-	do_default 2>&1 | tee output/debug/wp-compile.log
+	if [[ $KERNEL_CONFIGURE == no ]]; then
+		do_default 2>&1 | tee output/debug/wp-compile.log
+	else
+		do_default
+	fi
 else
 	eval "$@" 2>&1 | tee output/debug/wp-compile.log
 fi
