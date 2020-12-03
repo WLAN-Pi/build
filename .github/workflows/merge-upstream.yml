@@ -17,7 +17,7 @@ jobs:
         uses: danielmundi/merge-upstream@master
         with:
           upstream: danielmundi/build      # set the upstream repo
-          upstream-branch: master   # set the upstream branch to merge from
+          upstream-branch: dev   # set the upstream branch to merge from
           branch: dev          # set the branch to merge to
           useremail: daniel@finimundi.com
           username: Daniel Finimundi-auto
