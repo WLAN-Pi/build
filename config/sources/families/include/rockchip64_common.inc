@@ -8,7 +8,7 @@ BOOTDELAY=0
 OVERLAY_PREFIX='rockchip'
 SERIALCON=${SERIALCON:=$([ $BRANCH == "legacy" ] && echo "ttyFIQ0:1500000" || echo "ttyS2:1500000")}
 GOVERNOR="ondemand"
-BOOTBRANCH="tag:v2020.07"
+BOOTBRANCH="tag:v2020.10"
 PACKAGE_LIST_FAMILY="ethtool"
 
 RKBIN_DIR="$SRC/cache/sources/rkbin-tools"
@@ -49,6 +49,15 @@ elif [[ $BOARD == pinebook-pro ]]; then
 	ATFPATCHDIR='atf-rk3399'
 
 elif [[ $BOARD == rockpi-4* ]]; then
+
+	BOOT_USE_BLOBS=yes
+	BOOT_SUPPORT_SPI=yes
+	BOOT_SOC=rk3399
+	DDR_BLOB='rk33/rk3399_ddr_933MHz_v1.20.bin' # 1GB model does not boot with later versions
+	MINILOADER_BLOB='rk33/rk3399_miniloader_v1.19.bin'
+	BL31_BLOB='rk33/rk3399_bl31_v1.30.elf'
+
+elif [[ $BOARD == station-p1 ]]; then
 
 	BOOT_USE_BLOBS=yes
 	BOOT_SUPPORT_SPI=yes
