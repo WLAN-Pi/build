@@ -27,6 +27,7 @@ Main() {
 	AddUserWLANPi
 	SetupRNDIS
 	SetupPipxEnviro
+	InstallKismet
 	InstallPipx
 	InstallSpeedTestPipx
 	InstallProfilerPipx
@@ -44,6 +45,15 @@ SetupExternalRepos() {
 	echo "deb [trusted=yes] https://apt.fury.io/dfinimundi /" > /etc/apt/sources.list.d/wlanpi.list
 
 	apt update
+}
+
+# This installs Kismet
+InstallKismet() {
+	wget -O - https://www.kismetwireless.net/repos/kismet-release.gpg.key | sudo apt-key add -
+	echo 'deb https://www.kismetwireless.net/repos/apt/release/buster buster main' | sudo tee /etc/apt/sources.list.d/kismet.list
+	
+	sudo apt update
+	sudo apt install kismet
 }
 
 SetupPipxEnviro() {
