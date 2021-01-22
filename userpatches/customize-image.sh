@@ -53,7 +53,7 @@ InstallKismet() {
 	echo 'deb https://www.kismetwireless.net/repos/apt/release/buster buster main' | sudo tee /etc/apt/sources.list.d/kismet.list
 	
 	sudo apt update
-	sudo apt install kismet
+	sudo apt install kismet -y
 }
 
 SetupPipxEnviro() {
