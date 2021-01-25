@@ -54,6 +54,7 @@ InstallKismet() {
 	
 	sudo apt update
 	sudo apt install kismet -y
+	sudo usermod -aG kismet wlanpi
 }
 
 SetupPipxEnviro() {
