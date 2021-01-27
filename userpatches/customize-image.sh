@@ -248,6 +248,9 @@ SetupOtherConfigFiles() {
 	display_alert "Copy config file" "avahi-daemon" "info"
 	copy_overlay /etc/avahi/avahi-daemon.conf -o root -g root -m 644
 
+	display_alert "Configure avahi txt record" "id=wlanpi" "info"
+	sed -i '/<port>/ a \ \ \ \ <txt-record>id=wlanpi</txt-record>' /etc/avahi/services/ssh.service
+
 	display_alert "Copy config file" "wpa_supplicant.conf" "info"
 	copy_overlay /etc/wpa_supplicant/wpa_supplicant.conf -o root -g root -m 600
 
