@@ -98,7 +98,7 @@ pack_upload ()
 
 	if [[ $COMPRESS_OUTPUTIMAGE == *xz* ]]; then
 		display_alert "Compressing" "$DEST/images/${version}.img.xz" "info"
-		pixz -3 < "$DESTIMG/${version}.img" > "${DESTIMG}/${version}.img.xz"
+		pixz -9 < "$DESTIMG/${version}.img" > "${DESTIMG}/${version}.img.xz"
 		rm "${DESTIMG}/${version}.img"
 		compression_type=".xz"
 	fi
@@ -167,7 +167,7 @@ build_main ()
 		source "${SRC}"/lib/main.sh
 
 	fi
-
+	cd "${SRC}"
 	rm "/run/armbian/Armbian_${BOARD^}_${BRANCH}_${RELEASE}_${BUILD_DESKTOP}_${BUILD_MINIMAL}.pid"
 }
 
@@ -331,11 +331,9 @@ function build_all()
 			fi
 			if [[ "$store_hash" != idential ]]; then
 
-			((n+=1))
-
 			if [[ $1 != "dryrun" ]] && [[ $n -ge $START ]]; then
-
-							while :
+					((n+=1))
+						while :
 							do
 							if [[ $(find /run/armbian/*.pid 2>/dev/null | wc -l) -le ${MULTITHREAD} || ${MULTITHREAD} -eq 0  ]]; then
 								break
@@ -346,13 +344,17 @@ function build_all()
 					display_alert "Building ${n}."
 					if [[ "$KERNEL_ONLY" == "no" && "${MULTITHREAD}" -gt 0 ]]; then
 						build_main &
+						sleep $((RANDOM % 5))
+					elif [[ "${MULTITHREAD}" -gt 0 ]]; then
+						build_main &
+						sleep $((RANDOM % 5))
 					else
 						build_main
 					fi
 
 			# create BSP for all boards
 			elif [[ "${BSP_BUILD}" == yes ]]; then
-
+				((n+=1))
 				for BOARD in "${unique_boards[@]}"
 				do
 					# shellcheck source=/dev/null
@@ -374,8 +376,11 @@ function build_all()
 						display_alert "BSP for ${BOARD} ${BRANCH} ${RELEASE}."
 						if [[ "$IGNORE_HASH" == yes && "$KERNEL_ONLY" != "yes" && "${MULTITHREAD}" -gt 0 ]]; then
 							build_main &
-							sleep 0.5
-							else
+							sleep 0.02
+						elif [[ "${MULTITHREAD}" -gt 0 ]]; then
+							build_main &
+							sleep $((RANDOM % 5))
+						else
 							build_main
 						fi
 						# unset non board related stuff
@@ -386,6 +391,7 @@ function build_all()
 				display_alert "Done building all BSP images"
 				exit
 			else
+				((n+=1))
 				# In dryrun it only prints out what will be build
                                 printf "%s\t%-32s\t%-8s\t%-14s\t%-6s\t%-6s\t%-6s\n" "${n}." \
                                 "$BOARD (${BOARDFAMILY})" "${BRANCH}" "${RELEASE}" "${BUILD_DESKTOP}" "${BUILD_MINIMAL}"

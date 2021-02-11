@@ -21,7 +21,7 @@ USEALLCORES=yes # Use all CPU cores for compiling
 EXIT_PATCHING_ERROR="" # exit patching if failed
 [[ -z $HOST ]] && HOST="$BOARD" # set hostname to the board
 cd "${SRC}" || exit
-ROOTFSCACHE_VERSION=1
+ROOTFSCACHE_VERSION=2
 CHROOT_CACHE_VERSION=7
 BUILD_REPOSITORY_URL=$(improved_git remote get-url $(improved_git remote 2>/dev/null | grep origin) 2>/dev/null)
 BUILD_REPOSITORY_COMMIT=$(improved_git describe --match=d_e_a_d_b_e_e_f --always --dirty 2>/dev/null)
@@ -71,7 +71,7 @@ MAINLINE_KERNEL_DIR='linux-mainline'
 if [[ $USE_GITHUB_UBOOT_MIRROR == yes ]]; then
 	MAINLINE_UBOOT_SOURCE='https://github.com/RobertCNelson/u-boot'
 else
-	MAINLINE_UBOOT_SOURCE='git://git.denx.de/u-boot.git'
+	MAINLINE_UBOOT_SOURCE='https://gitlab.denx.de/u-boot/u-boot.git'
 fi
 MAINLINE_UBOOT_DIR='u-boot'
 
@@ -282,6 +282,8 @@ if [[ $DOWNLOAD_MIRROR == china ]] ; then
 	DEBIAN_SECURTY='mirrors.tuna.tsinghua.edu.cn/debian-security'
 	UBUNTU_MIRROR='mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/'
 fi
+
+ARMBIAN_MIRROR='https://redirect.armbian.com'
 
 # For user override
 if [[ -f $USERPATCHES_PATH/lib.config ]]; then

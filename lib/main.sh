@@ -159,7 +159,7 @@ if [[ -z $KERNEL_CONFIGURE ]]; then
 
 fi
 
-[[ ${KERNEL_CONFIGURE} == prebuilt ]] && REPOSITORY_INSTALL="u-boot,kernel,bsp,armbian-config,armbian-firmware"
+[[ ${KERNEL_CONFIGURE} == prebuilt ]] && REPOSITORY_INSTALL="u-boot,kernel,bsp,armbian-zsh,armbian-config,armbian-firmware"
 
 if [[ -z $BOARD ]]; then
 
@@ -457,6 +457,13 @@ if [[ ! -f ${DEB_STORAGE}/armbian-config_${REVISION}_all.deb ]]; then
 
 fi
 
+# Compile armbian-zsh if packed .deb does not exist or use the one from repository
+if [[ ! -f ${DEB_STORAGE}/armbian-zsh_${REVISION}_all.deb ]]; then
+
+        [[ "${REPOSITORY_INSTALL}" != *armbian-zsh* ]] && compile_armbian-zsh
+
+fi
+
 # Compile armbian-firmware if packed .deb does not exist or use the one from repository
 if ! ls "${DEB_STORAGE}/armbian-firmware_${REVISION}_all.deb" 1> /dev/null 2>&1 || ! ls "${DEB_STORAGE}/armbian-firmware-full_${REVISION}_all.deb" 1> /dev/null 2>&1; then
 
@@ -509,12 +516,16 @@ $([[ -n $BUILD_DESKTOP ]] && echo "BUILD_DESKTOP=${BUILD_DESKTOP} ")\
 $([[ -n $KERNEL_ONLY ]] && echo "KERNEL_ONLY=${KERNEL_ONLY} ")\
 $([[ -n $KERNEL_CONFIGURE ]] && echo "KERNEL_CONFIGURE=${KERNEL_CONFIGURE} ")\
 $([[ -n $COMPRESS_OUTPUTIMAGE ]] && echo "COMPRESS_OUTPUTIMAGE=${COMPRESS_OUTPUTIMAGE} ")\
-" "info"
+" "ext"
 
 } # end of do_default()
 
 if [[ -z $1 ]]; then
-	do_default 2>&1 | tee output/debug/wp-compile.log
+	if [[ $KERNEL_CONFIGURE == no ]]; then
+		do_default 2>&1 | tee output/debug/wp-compile.log
+	else
+		do_default
+	fi
 else
 	eval "$@" 2>&1 | tee output/debug/wp-compile.log
 fi
