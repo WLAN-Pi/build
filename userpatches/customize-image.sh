@@ -57,6 +57,7 @@ InstallKismet() {
 	sudo usermod -aG kismet wlanpi
 }
 
+
 SetupPipxEnviro() {
 	# Setting up Pipx in a global directory so all users in sudo group can access installed packages
 	mkdir -p /opt/wlanpi/pipx/bin
@@ -259,6 +260,9 @@ SetupOtherConfigFiles() {
 	display_alert "Copy config file" "avahi-daemon" "info"
 	copy_overlay /etc/avahi/avahi-daemon.conf -o root -g root -m 644
 
+	display_alert "Configure avahi txt record" "id=wlanpi" "info"
+	sed -i '/<port>/ a \ \ \ \ <txt-record>id=wlanpi</txt-record>' /etc/avahi/services/ssh.service
+  
 	display_alert "Copy config file" "wpa_supplicant.conf" "info"
 	copy_overlay /etc/wpa_supplicant/wpa_supplicant.conf -o root -g root -m 600
 

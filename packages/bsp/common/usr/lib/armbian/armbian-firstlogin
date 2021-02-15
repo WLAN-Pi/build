@@ -12,6 +12,9 @@ check_abort()
 {
 	echo -e "\nDisabling user account creation procedure\n"
 	rm -f /root/.not_logged_in_yet
+	if [[ ${USER_SHELL} == zsh ]]; then
+		printf "\nYou selected \e[0;91mZSH\x1B[0m as your default shell. If you want to use it right away, please logout and login! \n\n"
+	fi
 	trap - INT
 	exit 0
 }
@@ -90,21 +93,19 @@ set_timezone_and_locales()
 		LOCALES=$(grep territory /usr/share/i18n/locales/* | grep "$CCODE" | cut -d ":" -f 1 | cut -d "/" -f 6 |  xargs -I{} grep {} /usr/share/i18n/SUPPORTED | grep "\.UTF-8" | cut -d " " -f 1)
 		# UTF8 is not present everywhere so check again in case it returns empty value
 		[[ -z "$LOCALES" ]] && LOCALES=$(grep territory /usr/share/i18n/locales/* | grep "$CCODE" | cut -d ":" -f 1 | cut -d "/" -f 6 |  xargs -I{} grep {} /usr/share/i18n/SUPPORTED | cut -d " " -f 1)
-
-		# change it only if we have a match
-		if [[ -n "$LOCALES" ]]; then
+		echo -e "Detected timezone: \x1B[92m$TZDATA\x1B[0m"
+		echo ""
+		read -n1 -s -r -p "Set user language based on your location? [Y/n] " response
+		echo ""
+		# change it only if we have a match and if we agree
+		if [[ -n "$LOCALES" && "${response}" =~ ^(Y|y|"")$ ]]; then
 
 			options=(`echo ${LOCALES}`);
 
-			# reconfigure tzdata
-			timedatectl set-timezone "${TZDATA}"
-			dpkg-reconfigure --frontend=noninteractive tzdata > /dev/null 2>&1
-
-			echo -e "Detected timezone: \x1B[92m$(LC_ALL=C timedatectl | grep "Time zone" | cut -d":" -f2 | xargs)\x1B[0m"
-
 			# when having more locales, prompt for choosing one
 			if [[ "${#options[@]}" -gt 1 ]]; then
-				echo ""
+
+				options+=("Skip generating locales")
 				echo -e "\nAt your location, more locales are possible:\n"
 				PS3='Please enter your choice:'
 				select opt in "${options[@]}"
@@ -114,19 +115,37 @@ set_timezone_and_locales()
 						break
 					fi
 				done
+
 			fi
 
-			# generate locales
-			sed -i 's/# '"${LOCALES}"'/'"${LOCALES}"'/' /etc/locale.gen
-			echo -e "Generating locales: \x1B[92m${LOCALES}\x1B[0m"
-			locale-gen $LOCALES > /dev/null 2>&1
+			if [[ "${LOCALES}" != *Skip* ]]; then
 
-			# adding another keyboard layout
-			if grep -q " $CCODE " /usr/share/X11/xkb/rules/base.lst ; then
-				echo -e "Adding console keyboard layout: \x1B[92m$CCODE\x1B[0m"
-				CCODE=$(cat /etc/default/keyboard | grep XKBLAYOUT | awk -F'"' '$0=$2')",$CCODE"
-				sed -i "s/XKBLAYOUT=.*/XKBLAYOUT=\"$KEYBOARD\"/" /etc/default/keyboard
-				setupcon -k --force
+				# reconfigure tzdata
+				timedatectl set-timezone "${TZDATA}"
+				dpkg-reconfigure --frontend=noninteractive tzdata > /dev/null 2>&1
+
+				# generate locales
+				echo ""
+				sed -i 's/# '"${LOCALES}"'/'"${LOCALES}"'/' /etc/locale.gen
+				echo -e "Generating locales: \x1B[92m${LOCALES}\x1B[0m"
+				locale-gen $LOCALES > /dev/null 2>&1
+
+				# setting detected locales only for user
+				echo "export LC_ALL=$LOCALES" >> /home/$RealUserName/.bashrc
+				echo "export LANG=$LOCALES" >> /home/$RealUserName/.bashrc
+				echo "export LANGUAGE=$LOCALES" >> /home/$RealUserName/.bashrc
+				echo "export LC_ALL=$LOCALES" >> /home/$RealUserName/.xsessionrc
+				echo "export LANG=$LOCALES" >> /home/$RealUserName/.xsessionrc
+				echo "export LANGUAGE=$LOCALES" >> /home/$RealUserName/.xsessionrc
+
+				# adding another keyboard layout
+				if grep -q " ${CCODE,,} " /usr/share/X11/xkb/rules/base.lst ; then
+					echo -e "Adding console keyboard layout: \x1B[92m$CCODE\x1B[0m"
+					CCODE=$(cat /etc/default/keyboard | grep XKBLAYOUT | awk -F'"' '$0=$2')",$CCODE"
+					sed -i "s/XKBLAYOUT=.*/XKBLAYOUT=\"$KEYBOARD\"/" /etc/default/keyboard
+					setupcon -k --force
+				fi
+
 			fi
 		fi
 	fi
@@ -190,16 +209,6 @@ add_user()
 					usermod -aG ${additionalgroup} ${RealUserName} 2>/dev/null
 				done
 
-				# setting detected locales only for user
-				if [[ -n $LOCALES ]]; then
-					echo "export LC_ALL=$LOCALES" >> /home/$RealUserName/.bashrc
-					echo "export LANG=$LOCALES" >> /home/$RealUserName/.bashrc
-					echo "export LANGUAGE=$LOCALES" >> /home/$RealUserName/.bashrc
-					echo "export LC_ALL=$LOCALES" >> /home/$RealUserName/.xsessionrc
-					echo "export LANG=$LOCALES" >> /home/$RealUserName/.xsessionrc
-					echo "export LANGUAGE=$LOCALES" >> /home/$RealUserName/.xsessionrc
-				fi
-
 				# fix for gksu in Xenial
 				touch /home/$RealUserName/.Xauthority
 				chown $RealUserName:$RealUserName /home/$RealUserName/.Xauthority
@@ -228,7 +237,6 @@ add_user()
 }
 
 if [[ -f /root/.not_logged_in_yet && -n $(tty) ]]; then
-
 	# disable autologin
 	rm -f /etc/systemd/system/getty@.service.d/override.conf
 	rm -f /etc/systemd/system/serial-getty@.service.d/override.conf
@@ -275,8 +283,6 @@ if [[ -f /root/.not_logged_in_yet && -n $(tty) ]]; then
 			okay="$(awk -F': ' '{ print $2}' <<<"$result")"
 			if [[ "$okay" == "OK" ]]; then
 				(echo $first_input;echo $second_input;) | passwd root >/dev/null 2>&1
-				set_timezone_and_locales
-				set_shell
 				break
 				else
 				echo -e "Rejected - \e[0;31m$okay.\x1B[0m Try again."
@@ -287,12 +293,23 @@ if [[ -f /root/.not_logged_in_yet && -n $(tty) ]]; then
 	done
 	trap - INT TERM EXIT
 
+	# ask user to select shell
+	trap '' 2
+	set_shell
+	trap - INT TERM EXIT
+
 	trap check_abort INT
+
 	while [ -f "/root/.not_logged_in_yet" ]; do
 		echo -e "\nCreating a new user account. Press <Ctrl-C> to abort"
 		[ -n "$desktop_lightdm" ] && echo -e "\n\e[0;31mDesktop environment will not be enabled if you abort the new user creation\x1B[0m"
 		add_user
 	done
+	trap - INT TERM EXIT
+
+	# ask user to select automated locales or not
+	trap '' 2
+	set_timezone_and_locales
 	trap - INT TERM EXIT
 
 	if [[ ${USER_SHELL} == zsh ]]; then
