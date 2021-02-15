@@ -27,6 +27,7 @@ Main() {
 	AddUserWLANPi
 	SetupRNDIS
 	SetupPipxEnviro
+	InstallKismet
 	InstallPipx
 	InstallSpeedTestPipx
 	InstallProfilerPipx
@@ -45,6 +46,17 @@ SetupExternalRepos() {
 
 	apt update
 }
+
+# This installs Kismet
+InstallKismet() {
+	wget -O - https://www.kismetwireless.net/repos/kismet-release.gpg.key | sudo apt-key add -
+	echo 'deb https://www.kismetwireless.net/repos/apt/release/buster buster main' | sudo tee /etc/apt/sources.list.d/kismet.list
+	
+	sudo apt update
+	sudo apt install kismet -y
+	sudo usermod -aG kismet wlanpi
+}
+
 
 SetupPipxEnviro() {
 	# Setting up Pipx in a global directory so all users in sudo group can access installed packages
@@ -250,7 +262,7 @@ SetupOtherConfigFiles() {
 
 	display_alert "Configure avahi txt record" "id=wlanpi" "info"
 	sed -i '/<port>/ a \ \ \ \ <txt-record>id=wlanpi</txt-record>' /etc/avahi/services/ssh.service
-
+  
 	display_alert "Copy config file" "wpa_supplicant.conf" "info"
 	copy_overlay /etc/wpa_supplicant/wpa_supplicant.conf -o root -g root -m 600
 

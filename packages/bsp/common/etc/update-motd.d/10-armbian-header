@@ -28,6 +28,7 @@ KERNELID=$(uname -r)
 [[ "$BOARD_NAME" != "WLAN"* ]] && NAME_PREFIX="WLANPi "
 
 TERM=linux toilet -f standard -F metal $(echo ${NAME_PREFIX}$BOARD_NAME | sed 's/Orange Pi/OPi/' | sed 's/NanoPi/NPi/' | sed 's/Banana Pi/BPi/')
+
 echo -e "Welcome to \e[0;91mArmbian ${VERSION} ${DISTRIBUTION_CODENAME^}\x1B[0m with \e[0;91mLinux $KERNELID\x1B[0m\n"
 
 # displaying status warnings
