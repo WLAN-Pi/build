@@ -44,17 +44,17 @@ SetupExternalRepos() {
 	display_alert "Include apt repo" "WLAN Pi" "info"
 	echo "deb [trusted=yes] https://apt.fury.io/dfinimundi /" > /etc/apt/sources.list.d/wlanpi.list
 
-	apt update
+	display_alert "Include apt repo" "Kismet" "info"
+	wget -O - https://www.kismetwireless.net/repos/kismet-release.gpg.key | apt-key add -
+	echo 'deb https://www.kismetwireless.net/repos/apt/release/buster buster main' | tee /etc/apt/sources.list.d/kismet.list
+
+	apt-get update
 }
 
 # This installs Kismet
 InstallKismet() {
-	wget -O - https://www.kismetwireless.net/repos/kismet-release.gpg.key | sudo apt-key add -
-	echo 'deb https://www.kismetwireless.net/repos/apt/release/buster buster main' | sudo tee /etc/apt/sources.list.d/kismet.list
-	
-	sudo apt update
-	sudo apt install kismet -y
-	sudo usermod -aG kismet wlanpi
+	apt-get install kismet -y
+	usermod -aG kismet wlanpi
 }
 
 
